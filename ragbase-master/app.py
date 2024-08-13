@@ -38,24 +38,25 @@ def build_qa_chain(files):
 
 async def ask_chain(question: str, chain):
     full_response = ""
+    documents = []
+    async for event in ask_question(chain, question, session_id="session-id-42"):
+        if type(event) is str:
+            full_response += event
+        if type(event) is list:
+            documents.extend(event)
+    
+    # Display the complete response at once
     assistant = st.chat_message(
         "assistant", avatar=str(Config.Path.IMAGES_DIR / "assistant-avatar.png")
     )
     with assistant:
-        message_placeholder = st.empty()
-        message_placeholder.status(random.choice(LOADING_MESSAGES), state="running")
-        documents = []
-        async for event in ask_question(chain, question, session_id="session-id-42"):
-            if type(event) is str:
-                full_response += event
-                message_placeholder.markdown(full_response)
-            if type(event) is list:
-                documents.extend(event)
+        st.markdown(full_response)
         for i, doc in enumerate(documents):
             with st.expander(f"Source #{i+1}"):
                 st.write(doc.page_content)
 
     st.session_state.messages.append({"role": "assistant", "content": full_response})
+
 
 
 def show_upload_documents():
